@@ -9,6 +9,7 @@ export const getRouter = () => {
     routeTree,
     basepath: '/idea-spark',
     context: { queryClient },
+    basepath: "/idea-spark/",
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
   });
