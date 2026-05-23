@@ -1,11 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+// Nós removemos a linha do TanStack: import { createFileRoute } ...
+import React, { useEffect, useState } from "react";
 import { Lightbulb, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-
-export const Route = createFileRoute("/")({
-  component: Index,
-});
 
 type Todo = {
   id: string;
@@ -14,7 +10,8 @@ type Todo = {
   created_at: string;
 };
 
-function Index() {
+// Agora simplesmente exportamos a função Index diretamente!
+export default function Index() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
