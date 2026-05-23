@@ -7,24 +7,29 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Insight = {
+type Todo = {
   id: string;
-  text: string;
+  title: string;
+  is_complete: boolean;
   created_at: string;
 };
 
 function Index() {
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("insights")
+    const { data, error } = await supabase
+      .from("todos")
       .select("*")
       .order("created_at", { ascending: false });
-    setInsights((data as Insight[]) ?? []);
+    if (error) {
+      console.error("Erro ao buscar todos:", error);
+    } else {
+      setTodos((data as Todo[]) ?? []);
+    }
     setLoading(false);
   };
 
@@ -37,23 +42,25 @@ function Index() {
     const trimmed = text.trim();
     if (!trimmed) return;
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from("insights")
-      .insert({ text: trimmed })
-      .select()
-      .single();
+    const { error } = await supabase
+      .from("todos")
+      .insert({ title: trimmed, is_complete: false });
     setSubmitting(false);
-    if (!error && data) {
-      setInsights((prev) => [data as Insight, ...prev]);
-      setText("");
+    if (error) {
+      console.error("Erro ao inserir todo:", error);
+      return;
     }
+    setText("");
+    await load();
   };
 
   const handleDelete = async (id: string) => {
-    const prev = insights;
-    setInsights((cur) => cur.filter((i) => i.id !== id));
-    const { error } = await supabase.from("insights").delete().eq("id", id);
-    if (error) setInsights(prev);
+    const { error } = await supabase.from("todos").delete().eq("id", id);
+    if (error) {
+      console.error("Erro ao excluir todo:", error);
+      return;
+    }
+    await load();
   };
 
   return (
@@ -100,7 +107,7 @@ function Index() {
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
           </div>
-        ) : insights.length === 0 ? (
+        ) : todos.length === 0 ? (
           <div className="mx-auto max-w-md rounded-2xl border border-dashed border-zinc-800 px-8 py-16 text-center">
             <Lightbulb className="mx-auto mb-4 h-10 w-10 text-zinc-700" />
             <p className="text-zinc-500">
@@ -109,23 +116,23 @@ function Index() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {insights.map((insight) => (
+            {todos.map((todo) => (
               <article
-                key={insight.id}
+                key={todo.id}
                 className="group relative rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5 transition hover:border-cyan-400/40 hover:bg-zinc-900"
               >
                 <button
-                  onClick={() => handleDelete(insight.id)}
+                  onClick={() => handleDelete(todo.id)}
                   aria-label="Remover insight"
                   className="absolute right-3 top-3 rounded-lg p-1.5 text-zinc-500 opacity-0 transition hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
                 <p className="pr-6 text-zinc-100 leading-relaxed whitespace-pre-wrap break-words">
-                  {insight.text}
+                  {todo.title}
                 </p>
                 <time className="mt-4 block text-xs text-zinc-500">
-                  {new Date(insight.created_at).toLocaleString("pt-BR")}
+                  {new Date(todo.created_at).toLocaleString("pt-BR")}
                 </time>
               </article>
             ))}
